@@ -17,7 +17,7 @@ public class MongoDBConnection {
 			mongo = new Mongo("localhost");
 		}
 		
-		return mongo.getDB("local").getCollection("healthcare");
+		return mongo.getDB("local").getCollection("healthcare-big");
 	}
 	
 	

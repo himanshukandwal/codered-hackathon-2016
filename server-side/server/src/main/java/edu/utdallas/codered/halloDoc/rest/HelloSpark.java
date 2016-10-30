@@ -14,11 +14,13 @@ import org.springframework.stereotype.Component;
 import com.google.gson.Gson;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBCursor;
+import com.mongodb.DBObject;
 
 import edu.utdallas.codered.halloDoc.config.spark.Spark;
 import edu.utdallas.codered.halloDoc.model.DBResultObject;
 import edu.utdallas.codered.halloDoc.model.SymtompsRequest;
 import edu.utdallas.codered.halloDoc.model.SymtompsResponse;
+import edu.utdallas.codered.halloDoc.model.UserDetails;
 import edu.utdallas.codered.halloDoc.utils.MongoDBConnection;
 
 
@@ -37,7 +39,10 @@ public class HelloSpark implements Spark {
     public void register() {
         get("/hello", (req, res) -> "hello world");
         post("/identifyDisease", "application/json", (req, res) -> {
+        	System.out.println(" >>> " + req.body());
+        	
 			SymtompsRequest request = new Gson().fromJson(req.body(), SymtompsRequest.class);
+			
 			HashMap<String, Integer> diseaseFrequencyMap = new HashMap<>();
 			HashMap<String, String[]> diseaseTreatmentMap = new HashMap<>();
 			
@@ -68,7 +73,18 @@ public class HelloSpark implements Spark {
 				}
 			}
 			
-			return (disease == null ? new SymtompsResponse() : new SymtompsResponse(disease, diseaseTreatmentMap.get(disease)));
+			// insert
+			if (disease != null) {
+				DBObject savedInstance = new BasicDBObject("user_details", UserDetails.getUserDetails(request.getUser_details()));
+				savedInstance.put("symptoms", request.getSymptoms());
+				savedInstance.put("disease", disease);
+				savedInstance.put("treatment", diseaseTreatmentMap.get(disease));
+				
+				dbConnection.getHealthCareCollection().insert(savedInstance);
+				return new SymtompsResponse(disease, diseaseTreatmentMap.get(disease));
+			}
+			
+			return new SymtompsResponse();
 		}, json());
     }
     
